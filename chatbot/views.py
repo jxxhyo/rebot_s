@@ -22,7 +22,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 openai_api_key = "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"
 
 # Load documents from CSV
-loader = CSVLoader(file_path='/Users/jaehyo/Downloads/restaurant_info1.csv')
+loader = CSVLoader(file_path='restaurant_info1.csv')
 pages = loader.load_and_split()
 
 # Initialize embeddings
