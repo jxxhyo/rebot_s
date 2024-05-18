@@ -7,6 +7,7 @@ from django.utils import timezone
 
 # Import necessary modules for your custom chatbot
 #from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
