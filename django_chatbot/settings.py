@@ -53,6 +53,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 ROOT_URLCONF = "django_chatbot.urls"
 
 CORS_ALLOWED_ORIGINS = [
