@@ -58,6 +58,7 @@ ROOT_URLCONF = "django_chatbot.urls"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://172.26.3.97:3000",
+    "http://172.26.3.97:8000",
 ]
 
 TEMPLATES = [
