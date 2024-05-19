@@ -90,6 +90,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',  # React 앱이 실행되는 도메인
 ]
 
+CSRF_COOKIE_HTTPONLY = False
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
