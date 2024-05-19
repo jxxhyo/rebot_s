@@ -51,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -59,7 +60,7 @@ ROOT_URLCONF = "django_chatbot.urls"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://172.26.3.97:3000",
+    "http://172.26.3.97:3000",ㅇ
     "http://172.26.3.97:8000",
 ]
 
