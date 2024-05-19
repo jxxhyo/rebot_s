@@ -81,7 +81,7 @@ def chatbot(request):
     return render(request, 'chatbot.html', {'chats': chats})
 
 def login(request):
-    if request.method == 'POST':
+    if request.meathod == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user = auth.authenticate(request, username=username, password=password)
