@@ -6,6 +6,8 @@ from .models import Chat
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 # Import necessary modules for your custom chatbot
 from langchain_openai import ChatOpenAI
@@ -66,21 +68,21 @@ def ask_openai(message):
     return answer
 
 # Create your views here.
+@csrf_exempt
 def chatbot(request):
-    # 인증되지 않은 사용자 처리
-    if isinstance(request.user, AnonymousUser):
-        return redirect('login')
-    
-    chats = Chat.objects.filter(user=request.user)
-
     if request.method == 'POST':
-        message = request.POST.get('message')
-        response = ask_openai(message)
+        try:
+            data = json.loads(request.body)
+            message = data.get('message')
+            if not message:
+                return JsonResponse({'error': 'Message is required'}, status=400)
 
-        chat = Chat(user=request.user, message=message, response=response, created_at=timezone.now())
-        chat.save()
-        return JsonResponse({'message': message, 'response': response})
-    return render(request, 'chatbot.html', {'chats': chats})
+            response = ask_openai(message)
+            return JsonResponse({'response': response})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 def login(request):
     if request.method == 'POST':
