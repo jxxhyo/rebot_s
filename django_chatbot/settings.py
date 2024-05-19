@@ -63,6 +63,15 @@ CORS_ALLOWED_ORIGINS = [
     "http://172.26.3.97:8000",
 ]
 
+# 또는 아래와 같이 특정 도메인만 허용
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^http://localhost:3000$',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',  # React 앱이 실행되는 도메인
+]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
