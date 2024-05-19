@@ -52,6 +52,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -90,7 +91,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',  # React 앱이 실행되는 도메인
 ]
 
-CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_HTTPONLY = False  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
+CSRF_COOKIE_SECURE = False  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
 
 TEMPLATES = [
     {

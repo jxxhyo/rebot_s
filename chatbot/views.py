@@ -120,10 +120,10 @@ def logout(request):
     return redirect('login')
 
 
-from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
 
 @ensure_csrf_cookie
-def csrf_token_view(request):
+def set_csrf_cookie(request):
     return JsonResponse({'detail': 'CSRF cookie set'})
 
