@@ -4,19 +4,17 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from .models import Chat
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser
 
 # Import necessary modules for your custom chatbot
-#from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-#from langchain.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders import CSVLoader
 from langchain_community.vectorstores import Chroma
-#from langchain.vectorstores import Chroma
-#from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Initialize your custom chatbot model components
@@ -69,6 +67,10 @@ def ask_openai(message):
 
 # Create your views here.
 def chatbot(request):
+    # 인증되지 않은 사용자 처리
+    if isinstance(request.user, AnonymousUser):
+        return redirect('login')
+    
     chats = Chat.objects.filter(user=request.user)
 
     if request.method == 'POST':
@@ -81,7 +83,7 @@ def chatbot(request):
     return render(request, 'chatbot.html', {'chats': chats})
 
 def login(request):
-    if request.meathod == 'POST':
+    if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user = auth.authenticate(request, username=username, password=password)
@@ -111,7 +113,7 @@ def register(request):
                 error_message = 'Error creating account'
                 return render(request, 'register.html', {'error_message': error_message})
         else:
-            error_message = 'Password dont match'
+            error_message = 'Passwords do not match'
             return render(request, 'register.html', {'error_message': error_message})
     return render(request, 'register.html')
 
@@ -119,11 +121,9 @@ def logout(request):
     auth.logout(request)
     return redirect('login')
 
-
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 
 @ensure_csrf_cookie
 def set_csrf_cookie(request):
     return JsonResponse({'detail': 'CSRF cookie set'})
-
