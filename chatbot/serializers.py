@@ -1,26 +1,26 @@
+# serializers.py
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import CustomUser
 
-class UserSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+class UserSignUpSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    password_confirm = serializers.CharField(write_only=True)
+    language = serializers.ChoiceField(choices=[('en', 'English'), ('ko', 'Korean')])
 
     class Meta:
-        model = CustomUser
-        fields = ['username', 'password', 'password2', 'language']
-        extra_kwargs = {'password': {'write_only': True}}
+        model = User
+        fields = ['username', 'password', 'password_confirm', 'language']
 
-    def save(self):
-        user = CustomUser(
-            username=self.validated_data['username'],
-            language=self.validated_data['language']
+    def validate(self, data):
+        if data['password'] != data['password_confirm']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data
+
+    def create(self, validated_data):
+        user = User(
+            username=validated_data['username'],
         )
-        password = self.validated_data['password']
-        password2 = self.validated_data['password2']
-
-        if password != password2:
-            raise serializers.ValidationError({'password': 'Passwords must match.'})
-
-        user.set_password(password)
+        user.set_password(validated_data['password'])
+        user.profile.language = validated_data['language']
         user.save()
         return user

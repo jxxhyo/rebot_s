@@ -67,19 +67,26 @@ def ask_openai(message):
     answer = response['answer']
     return answer
 
-from rest_framework import generics
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import UserSerializer
-from .models import CustomUser
+from django.views.decorators.csrf import csrf_exempt
 
-class RegisterUser(APIView):
-    def post(self, request, format=None):
-        serializer = UserSerializer(data=request.data)
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import UserSignUpSerializer
+
+class UserSignUpView(APIView):
+    def post(self, request):
+        serializer = UserSignUpSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            return Response({'success': 'User created successfully.'})
-        return Response(serializer.errors, status=400)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Create your views here.
@@ -106,7 +113,6 @@ def chatbot(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 
 from django.views.decorators.csrf import ensure_csrf_cookie
