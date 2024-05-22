@@ -1,11 +1,10 @@
 from django.urls import path
 from . import views
-from .views import set_csrf_cookie
+from .views import set_csrf_cookie, RegisterUser
+
 
 urlpatterns = [
-    path('', views.chatbot, name='chatbot'),
-    path('login', views.login, name='login'),
-    path('register', views.register, name='register'),
-    path('logout', views.logout, name='logout'),
+    path('register/', RegisterUser.as_view(), name='register'), 
+    path('chatbot/', views.chatbot, name='chatbot'), 
     path('csrf/', set_csrf_cookie, name='csrf')  # CSRF 쿠키를 설정하는 엔드포인트
 ]

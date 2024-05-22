@@ -28,7 +28,6 @@ DEBUG = True
 ALLOWED_HOSTS = ['43.203.230.161', 'localhost', '127.0.0.1','0.0.0.0','172.26.3.97']
 
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -40,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "chatbot",
     'corsheaders',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -50,9 +50,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -66,8 +66,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOW_METHODS = [
-    'GET',
     'POST',
+    'GET',
     'PUT',
     'PATCH',
     'DELETE',
@@ -78,21 +78,33 @@ ROOT_URLCONF = "django_chatbot.urls"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://172.26.3.97:3000",
-    "http://172.26.3.97:8000",
+    "http://localhost:8000",
+    'http://127.0.0.1:8000',
 ]
 
 # 또는 아래와 같이 특정 도메인만 허용
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r'^http://localhost:3000$',
+    '^http://localhost:3000',
+    "http://localhost:8000",
+    'http://127.0.0.1:8000',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',  # React 앱이 실행되는 도메인
+    "http://localhost:8000",
+    'http://127.0.0.1:8000',
 ]
 
-CSRF_COOKIE_HTTPONLY = False  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
-CSRF_COOKIE_SECURE = False  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
+CSRF_COOKIE_HTTPONLY = True  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
+CSRF_COOKIE_SECURE = True  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
+CSRF_USE_SESSIONS = False
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
 
 TEMPLATES = [
     {
@@ -112,35 +124,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "django_chatbot.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
 }
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
 
 
 # Internationalization
