@@ -98,6 +98,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://172.16.24.225:3000'
 ]
 
+CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_HTTPONLY = True  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
 CSRF_COOKIE_SECURE = True  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
 CSRF_USE_SESSIONS = False
