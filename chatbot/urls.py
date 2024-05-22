@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import set_csrf_cookie, RegisterUser
+from .views import set_csrf_cookie, UserSignUpView
 from .views import UserSignUpView
 
 urlpatterns = [

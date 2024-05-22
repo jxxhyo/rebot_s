@@ -70,7 +70,7 @@ def ask_openai(message):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer
+from .serializers import UserSignUpSerializer
 from django.views.decorators.csrf import csrf_exempt
 
 
