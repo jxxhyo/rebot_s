@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-s#)30g#v^x33rdh1709+hnqz@6ao!a-n=0(dkhfjk=krf56g6-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['43.203.230.161', 'localhost', '127.0.0.1','0.0.0.0','172.26.3.97']
+ALLOWED_HOSTS = ['43.203.230.161', 'localhost', '127.0.0.1','0.0.0.0','172.26.3.97','172.16.24.225']
 
 
 # Application definition
@@ -80,6 +80,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8000",
     'http://127.0.0.1:8000',
+    'http://172.16.24.225:3000'
 ]
 
 # 또는 아래와 같이 특정 도메인만 허용
@@ -87,12 +88,14 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     '^http://localhost:3000',
     "http://localhost:8000",
     'http://127.0.0.1:8000',
+    'http://172.16.24.225:3000'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',  # React 앱이 실행되는 도메인
     "http://localhost:8000",
     'http://127.0.0.1:8000',
+    'http://172.16.24.225:3000'
 ]
 
 CSRF_COOKIE_HTTPONLY = True  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
