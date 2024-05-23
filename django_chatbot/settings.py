@@ -77,30 +77,36 @@ CORS_ALLOW_METHODS = [
 ROOT_URLCONF = "django_chatbot.urls"
 
 CORS_ALLOWED_ORIGINS = [
+    "http://43.203.230.161:8000", 
     "http://localhost:3000",
     "http://localhost:8000",
     'http://127.0.0.1:8000',
+    'http://127.0.0.1:3000',
     'http://172.16.24.225:3000'
 ]
 
 # 또는 아래와 같이 특정 도메인만 허용
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    '^http://localhost:3000',
+    "http://43.203.230.161:8000", 
+    'http://localhost:3000',
     "http://localhost:8000",
     'http://127.0.0.1:8000',
     'http://172.16.24.225:3000'
+    'http://127.0.0.1:3000',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://43.203.230.161:8000", 
     'http://localhost:3000',  # React 앱이 실행되는 도메인
     "http://localhost:8000",
     'http://127.0.0.1:8000',
     'http://172.16.24.225:3000'
+    'http://127.0.0.1:3000',
 ]
 
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_HTTPONLY = True  # JavaScript에서 CSRF 쿠키에 접근할 수 있도록 설정 (보안상 주의 필요)
-CSRF_COOKIE_SECURE = True  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
+CSRF_COOKIE_SECURE = False  # 개발 환경에서는 False로 설정, 프로덕션 환경에서는 True로 설정
 CSRF_USE_SESSIONS = False
 
 REST_FRAMEWORK = {
@@ -151,8 +157,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

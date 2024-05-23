@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-# Create your models here.
 class Chat(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
@@ -20,10 +21,7 @@ class Profile(models.Model):
         ('ja', 'Japanese')
     ], default='en')
 
-# Connect Profile creation with User creation using signals
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
+# 신호를 사용하여 프로필 자동 생성
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -32,3 +30,10 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+# User 모델에 profile 속성을 추가
+def get_or_create_profile(self):
+    profile, created = Profile.objects.get_or_create(user=self)
+    return profile
+
+User.add_to_class("profile", property(get_or_create_profile))
