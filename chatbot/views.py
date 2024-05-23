@@ -74,12 +74,16 @@ from .serializers import UserSignUpSerializer
 from django.views.decorators.csrf import csrf_exempt
 
 
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.views import View
 from django.http import JsonResponse
 from .forms import RegisterForm
 
+from django.utils.decorators import method_decorator
+
+@method_decorator(csrf_exempt, name='dispatch')
 class UserSignUpView(View):
     def post(self, request, *args, **kwargs):
         form = RegisterForm(request.POST)
