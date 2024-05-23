@@ -123,17 +123,21 @@ def register(request):
 def login_view(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password')
 
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return JsonResponse({'success': True, 'message': 'Login successful'}, status=200)
-        else:
-            return JsonResponse({'error': 'Invalid username or password'}, status=400)
+        try:
+            user = User.objects.get(email=email)
+            if user.check_password(password):
+                login(request, user)
+                return JsonResponse({'success': True, 'message': 'Login successful'}, status=200)
+            else:
+                return JsonResponse({'error': 'Invalid email or password'}, status=400)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Invalid email or password'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 @csrf_exempt
 def logout_view(request):
