@@ -3,16 +3,16 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 
 class UserSignUpSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password_confirm = serializers.CharField(write_only=True)
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
     language = serializers.ChoiceField(choices=[('en', 'English'), ('ko', 'Korean')])
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'password_confirm', 'language']
+        fields = ['username', 'password1', 'password2', 'language']
 
     def validate(self, data):
-        if data['password'] != data['password_confirm']:
+        if data['password1'] != data['password2']:
             raise serializers.ValidationError("Passwords do not match.")
         return data
 
@@ -20,7 +20,7 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         user = User(
             username=validated_data['username'],
         )
-        user.set_password(validated_data['password'])
+        user.set_password1(validated_data['password1'])
         user.profile.language = validated_data['language']
         user.save()
         return user
