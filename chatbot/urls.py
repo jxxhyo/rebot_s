@@ -1,12 +1,11 @@
 from django.urls import path
-from . import views
-from .views import set_csrf_cookie
-
+from .views import register, login_view, logout_view, chatbot, get_user_info, set_csrf_cookie
 
 urlpatterns = [
-    path('register/', views.register, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('chatbot/', views.chatbot, name='chatbot'),
+    path('register/', register, name='register'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+    path('chatbot/', chatbot, name='chatbot'),
+    path('get-username/<str:username>/', get_user_info, name='get_user_info'),
     path('set-csrf-cookie/', set_csrf_cookie, name='set_csrf_cookie'),
 ]

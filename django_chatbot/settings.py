@@ -100,7 +100,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',  # React 앱이 실행되는 도메인
     "http://localhost:8000",
     'http://127.0.0.1:8000',
-    'http://172.16.24.225:3000'
+    'http://172.16.24.225:3000',
     'http://127.0.0.1:3000',
 ]
 
@@ -157,6 +157,9 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+LOGIN_URL = '/login/'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
