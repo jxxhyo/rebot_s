@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 from django.contrib.auth import login, logout
 from django.conf import settings
+from .models import Profile
 
 # Import necessary modules for your custom chatbot
 from langchain_openai import ChatOpenAI
@@ -107,13 +108,16 @@ def register(request):
         user = User.objects.create_user(username=username, email=email, password=password1)
         user.save()
 
+        # Create Profile for the new user if it doesn't exist
+        profile, created = Profile.objects.get_or_create(user=user, defaults={'language': language})
+
         login(request, user)
         return JsonResponse({'message': 'User registered successfully!'}, status=200)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
+
 @csrf_exempt
 def login_view(request):
     if request.method == 'POST':
