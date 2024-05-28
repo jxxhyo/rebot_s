@@ -158,6 +158,8 @@ DATABASES = {
     }
 }
 
+OPENAI_API_KEY = "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"
+
 LOGIN_URL = '/login/'
 
 
