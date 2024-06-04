@@ -19,7 +19,7 @@ class Profile(models.Model):
         ('ko', 'Korean'),
         ('zh', 'Chinese'),
         ('ja', 'Japanese')
-    ], default='en')
+    ])
 
 # 신호를 사용하여 프로필 자동 생성
 @receiver(post_save, sender=User)

@@ -103,7 +103,7 @@ def register(request):
         email = data.get('email')
         password1 = data.get('password1')
         password2 = data.get('password2')
-        language = data.get('language', 'en')
+        language = data.get('language')
 
         if password1 != password2:
             return JsonResponse({'error': "Passwords don't match"}, status=400)
@@ -117,8 +117,10 @@ def register(request):
         user = User.objects.create_user(username=username, email=email, password=password1)
         user.save()
 
-        # Create Profile for the new user if it doesn't exist
-        profile, created = Profile.objects.get_or_create(user=user, defaults={'language': language})
+        # Profile 생성은 신호 수신자가 처리하므로, 언어를 설정하는 부분만 추가합니다.
+        profile = user.profile  # get_or_create_profile 메서드 사용
+        profile.language = language
+        profile.save()
 
         login(request, user)
         return JsonResponse({'message': 'User registered successfully!'}, status=200)
@@ -126,6 +128,7 @@ def register(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 @csrf_exempt
 def login_view(request):
