@@ -186,7 +186,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', "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")
+OPENAI_API_KEY = "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"
 
 LOGIN_URL = '/login/'
 
