@@ -24,3 +24,22 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         user.profile.language = validated_data['language']
         user.save()
         return user
+
+# serializers.py
+
+from rest_framework import serializers
+from .models import Restaurant, SavedRestaurant
+
+class RestaurantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant
+        fields = '__all__'
+
+class SavedRestaurantSerializer(serializers.ModelSerializer):
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    restaurant_category = serializers.CharField(source='restaurant.category', read_only=True)
+    restaurant_location = serializers.CharField(source='restaurant.location', read_only=True)
+    
+    class Meta:
+        model = SavedRestaurant
+        fields = ['id', 'user', 'restaurant', 'restaurant_name', 'restaurant_category', 'restaurant_location']

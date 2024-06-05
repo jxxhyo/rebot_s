@@ -129,6 +129,8 @@ def register(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate, login
 
 @csrf_exempt
 def login_view(request):
@@ -137,14 +139,25 @@ def login_view(request):
         email = data.get('email')
         password = data.get('password')
 
-        try:
-            user = User.objects.get(email=email)
-            if user.check_password(password):
-                login(request, user)
-                return JsonResponse({'success': True, 'message': 'Login successful', 'username': user.username}, status=200)
-            else:
-                return JsonResponse({'error': 'Invalid email or password'}, status=400)
-        except User.DoesNotExist:
+        print(f"Email: {email}, Password: {password}")  # 디버깅 메시지 추가
+
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            login(request, user)
+
+            # JWT 토큰 생성
+            refresh = RefreshToken.for_user(user)
+            response = JsonResponse({
+                'success': True,
+                'message': 'Login successful',
+                'username': user.username,
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+            })
+            response.set_cookie('access_token', str(refresh.access_token), httponly=True)
+            response.set_cookie('refresh_token', str(refresh), httponly=True)
+            return response
+        else:
             return JsonResponse({'error': 'Invalid email or password'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -186,5 +199,97 @@ def get_user_info(request, username):
         return JsonResponse({'error': 'User does not exist'}, status=404)
 
 @ensure_csrf_cookie
-def set_csrf_cookie(request):
+def set_csrf_token(request):
     return JsonResponse({'detail': 'CSRF cookie set'})
+
+from rest_framework import viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import Restaurant, SavedRestaurant
+from .serializers import RestaurantSerializer, SavedRestaurantSerializer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from numpy import int64
+
+
+class RestaurantViewSet(viewsets.ModelViewSet):
+    queryset = Restaurant.objects.all()
+    serializer_class = RestaurantSerializer
+    permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def saved_restaurants(request):
+    user = request.user
+    saved_restaurants = SavedRestaurant.objects.filter(user=user)
+    serializer = SavedRestaurantSerializer(saved_restaurants, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+#@permission_classes([IsAuthenticated])
+def recommend_restaurants(request):
+    user = request.user
+    saved_restaurants = SavedRestaurant.objects.filter(user=user).values_list('restaurant', flat=True)
+    if not saved_restaurants:
+        return Response([])
+
+    saved_restaurant_objs = Restaurant.objects.filter(id__in=saved_restaurants)
+    all_restaurants = Restaurant.objects.exclude(id__in=saved_restaurants)
+    
+    all_data = [
+        f"{r.menu1} {r.menu2}  {r.service} {r.category} {r.location}"
+        for r in all_restaurants
+    ]
+
+    saved_data = [
+        f"{r.menu1} {r.menu2} {r.service} {r.category} {r.location}"
+        for r in saved_restaurant_objs
+    ]
+
+    vectorizer = CountVectorizer().fit_transform(saved_data + all_data)
+    vectors = vectorizer.toarray()
+    cosine_matrix = cosine_similarity(vectors)
+
+    saved_indices = range(len(saved_data))
+    similar_indices = cosine_matrix[saved_indices, len(saved_data):].mean(axis=0).argsort()[::-1][:5]
+    similar_indices = [int(i) for i in similar_indices]  # int64를 int로 변환
+    similar_restaurants = [all_restaurants[i] for i in similar_indices]
+
+    serializer = RestaurantSerializer(similar_restaurants, many=True)
+    return Response(serializer.data)
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Restaurant, SavedRestaurant
+
+@api_view(['POST'])
+#@permission_classes([IsAuthenticated])
+def save_restaurant(request):
+    user = request.user
+    restaurant_name = request.data.get('name')
+
+    if not restaurant_name:
+        return Response({'error': 'Restaurant name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        restaurant = Restaurant.objects.get(name=restaurant_name)
+    except Restaurant.DoesNotExist:
+        return Response({'error': 'Restaurant not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    saved_restaurant, created = SavedRestaurant.objects.get_or_create(user=user, restaurant=restaurant)
+
+    if created:
+        return Response({'status': 'saved'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'status': 'already saved'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+#@permission_classes([IsAuthenticated])
+def unsave_restaurant(request):
+    user = request.user
+    restaurant_id = request.data.get('id')
+    restaurant = Restaurant.objects.get(id=restaurant_id)
+    SavedRestaurant.objects.filter(user=user, restaurant=restaurant).delete()
+    return Response({'status': 'unsaved'})
