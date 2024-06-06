@@ -38,9 +38,6 @@ def get_or_create_profile(self):
 
 User.add_to_class("profile", property(get_or_create_profile))
 
-from django.db import models
-from django.contrib.auth.models import User
-
 class Restaurant(models.Model):
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=255)
@@ -58,3 +55,15 @@ class SavedRestaurant(models.Model):
 
     def __str__(self):
         return f"{self.user.username} saved {self.restaurant.name}"
+
+class ResImage(models.Model):
+    restaurant = models.ForeignKey(Restaurant, related_name='resimages', on_delete=models.CASCADE)
+    image_name = models.CharField(max_length=255)
+    image_en = models.ImageField(upload_to='images/en/', blank=True, null=True)
+    image_ko = models.ImageField(upload_to='images/ko/', blank=True, null=True)
+    image_zh = models.ImageField(upload_to='images/zh/', blank=True, null=True)
+    image_ja = models.ImageField(upload_to='images/ja/', blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.image_name

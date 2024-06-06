@@ -20,10 +20,11 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 # Initialize your custom chatbot model components
+#openai_api_key='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'
 openai_api_key = settings.OPENAI_API_KEY
 
 # List of CSV file paths
-csv_files = ['restaurant_info1.csv','all_res_info_df.csv','animal.csv']
+csv_files = ['restaurant_info1.csv','all_res_info_df.csv']
 
 # Load documents from all CSV files
 documents = []
@@ -253,7 +254,7 @@ def recommend_restaurants(request):
 
     saved_indices = range(len(saved_data))
     similar_indices = cosine_matrix[saved_indices, len(saved_data):].mean(axis=0).argsort()[::-1][:5]
-    similar_indices = [int(i) for i in similar_indices]  # int64를 int로 변환
+    similar_indices = [int(i) for i in similar_indices]
     similar_restaurants = [all_restaurants[i] for i in similar_indices]
 
     serializer = RestaurantSerializer(similar_restaurants, many=True)
@@ -285,11 +286,17 @@ def save_restaurant(request):
     else:
         return Response({'status': 'already saved'}, status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
 #@permission_classes([IsAuthenticated])
 def unsave_restaurant(request):
     user = request.user
-    restaurant_id = request.data.get('id')
-    restaurant = Restaurant.objects.get(id=restaurant_id)
-    SavedRestaurant.objects.filter(user=user, restaurant=restaurant).delete()
-    return Response({'status': 'unsaved'})
+    restaurant_name = request.data.get('name')
+    
+    try:
+        restaurant = Restaurant.objects.get(name=restaurant_name)
+        SavedRestaurant.objects.filter(user=user, restaurant=restaurant).delete()
+        return Response({'status': 'unsaved'})
+    except Restaurant.DoesNotExist:
+        return Response({'error': 'Restaurant not found'}, status=404)
+
