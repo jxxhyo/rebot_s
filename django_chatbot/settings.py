@@ -77,7 +77,7 @@ CORS_ALLOW_METHODS = [
 ROOT_URLCONF = "django_chatbot.urls"
 
 CORS_ALLOWED_ORIGINS = [
-    "http://43.203.230.161:8000", 
+    "http://3.36.105.171:8000", 
     "http://localhost:3000",
     "http://localhost:8000",
     'http://127.0.0.1:8000',
@@ -87,7 +87,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # 또는 아래와 같이 특정 도메인만 허용
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    "http://43.203.230.161:8000", 
+    "http://3.36.105.171:8000", 
     'http://localhost:3000',
     "http://localhost:8000",
     'http://127.0.0.1:8000',
@@ -96,7 +96,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://43.203.230.161:8000", 
+    "http://3.36.105.171:8000", 
     'http://localhost:3000',  # React 앱이 실행되는 도메인
     "http://localhost:8000",
     'http://127.0.0.1:8000',
