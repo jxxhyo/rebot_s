@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 from django.contrib.auth import login, logout
 from django.conf import settings
+from langchain.docstore.document import Document
 
 # Import necessary modules for your custom chatbot
 from langchain_openai import ChatOpenAI
@@ -18,19 +19,31 @@ from langchain_community.document_loaders import CSVLoader
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-
+import pandas as pd
 # Initialize your custom chatbot model components
 #openai_api_key='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'
 openai_api_key = settings.OPENAI_API_KEY
 
 # List of CSV file paths
-csv_files = ['restaurant_info1.csv','all_res_info_df.csv']
+csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv']
+
+# Function to load and split CSV data into documents
+def load_and_split_csv(file_path):
+    dataframe = pd.read_csv(file_path)
+    documents = []
+    for index, row in dataframe.iterrows():
+        text = "\n".join([f"{col}: {val}" for col, val in row.items()])
+        document = Document(
+            page_content=text, 
+            metadata={'row_index': index}
+        )
+        documents.append(document)
+    return documents
 
 # Load documents from all CSV files
 documents = []
 for file_path in csv_files:
-    loader = CSVLoader(file_path=file_path)
-    documents.extend(loader.load_and_split())
+    documents.extend(load_and_split_csv(file_path))
 
 # Initialize embeddings
 model_name = "jhgan/ko-sroberta-multitask"
@@ -50,7 +63,10 @@ memory = ConversationBufferMemory(
     memory_key="chat_history", return_messages=True
 )
 
-system_template = """너의 이름은 ‘REBOT’이야. 역할은 서울에 위치한 성수동 식당의 정보를 알려주고 추천해주는 챗봇이야. 사용자가 물어본 질문에 대해서 다음과 같이 대답하면 됩니다.
+system_template = """
+질문의 언어를 파악하고 그 언어로 답변을 하면 됩니다.
+
+너의 이름은 ‘REBOT’이야. 역할은 서울에 위치한 성수동 식당의 정보를 알려주고 추천해주는 챗봇이야. 사용자가 물어본 질문에 대해서 다음과 같이 대답하면 됩니다.
 잘 모르는 내용이면 ‘해당 내용에 대해서는 잘 모르겠습니다.’라고 대답합니다.
 
 질문 : ’안녕?’, ‘안녕하세요’, ‘반가워’ 
@@ -91,9 +107,10 @@ retriever = vectorstore.as_retriever()
 # Initialize the conversational retrieval chain
 qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, combine_docs_chain_kwargs={"prompt": qa_prompt}, memory=memory, output_key='answer')
 
-def ask_openai(message):
+def ask_openai(message, language):
     response = qa({"question": message})
     answer = response['answer']
+    
     return answer
 
 @csrf_exempt
@@ -176,16 +193,30 @@ def chatbot(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            username = data.get('username')
             message = data.get('message')
-            if not message:
-                return JsonResponse({'error': 'Message is required'}, status=400)
+            language = data.get('language')
 
-            response = ask_openai(message)
+            if not username or not message:
+                return JsonResponse({'error': 'Username and message are required'}, status=400)
+
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return JsonResponse({'error': 'User not found'}, status=404)
+
+            response = ask_openai(message, language)
+
+            # Chat 모델을 사용하여 메시지와 응답을 저장합니다.
+            Chat.objects.create(user=user, message=message, response=response)
+
             return JsonResponse({'response': response})
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
 
 #@login_required
 def get_user_info(request, username):
@@ -207,7 +238,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Restaurant, SavedRestaurant
+from .models import Restaurant, SavedRestaurant, BookmarkRestaurantInfo
 from .serializers import RestaurantSerializer, SavedRestaurantSerializer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -300,3 +331,27 @@ def unsave_restaurant(request):
     except Restaurant.DoesNotExist:
         return Response({'error': 'Restaurant not found'}, status=404)
 
+@csrf_exempt
+@api_view(['POST'])
+
+def get_restaurant_coordinates(request):
+    try:
+        data = json.loads(request.body)
+        name = data.get('name')
+
+        if not name:
+            return JsonResponse({'error': 'name is required'}, status=400)
+
+        try:
+            restaurant = BookmarkRestaurantInfo.objects.get(name_ko=name)
+            response_data = {
+                'name_ko': restaurant.name_ko,
+                'latitude': restaurant.latitude,
+                'longitude': restaurant.longitude
+            }
+            return JsonResponse(response_data, status=200)
+        except BookmarkRestaurantInfo.DoesNotExist:
+            return JsonResponse({'error': 'Restaurant not found'}, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)

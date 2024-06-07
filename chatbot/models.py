@@ -67,3 +67,21 @@ class ResImage(models.Model):
     
     def __str__(self):
         return self.image_name
+
+
+class BookmarkRestaurantInfo(models.Model):
+    name_ko = models.CharField(max_length=255)
+    name_en = models.CharField(max_length=255)
+    name_ja = models.CharField(max_length=255)
+    name_zh = models.CharField(max_length=255)
+    image_ko = models.CharField(max_length=255, blank=True, null=True)
+    image_en = models.CharField(max_length=255, blank=True, null=True)
+    image_ja = models.CharField(max_length=255, blank=True, null=True)
+    image_zh = models.CharField(max_length=255, blank=True, null=True)
+    bookmark_count = models.IntegerField(default=0)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+
+    def __str__(self):
+        return self.name_ko

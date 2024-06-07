@@ -1,0 +1,12 @@
+import pandas as pd
+
+# Load the new CSV file to inspect its structure
+file_path = '//Users/jaehyo/Documents/projects/chatbot/django_chatbot/res_name_lan.csv'
+
+# Attempt to read the file with different encodings
+
+df_res_name_lan = pd.read_csv(file_path, encoding='utf-8')
+
+
+# Display the dataframe to understand its structure
+print(df_res_name_lan.head())
