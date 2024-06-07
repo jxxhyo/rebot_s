@@ -49,40 +49,26 @@ llm = ChatOpenAI(
     max_tokens=2048,
 )
 
-def load_and_split_csv(file_path):
-    dataframe = pd.read_csv(file_path)
-    documents = []
-    for index, row in dataframe.iterrows():
-        text = "\n".join([f"{col}: {val}" for col, val in row.items()])
-        document = Document(
-            page_content=text, 
-            metadata={'row_index': index}
-        )
-        documents.append(document)
-    return documents
-
-def embed_files(file_paths):
-    cache_dir = LocalFileStore(f"./.cache/embeddings/")
+def embed_file(file_path):
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file_path.split('/')[-1]}")
     splitter = CharacterTextSplitter.from_tiktoken_encoder(separator="\n", chunk_size=600, chunk_overlap=100)
-    documents = []
-
-    for file_path in file_paths:
-        documents.extend(load_and_split_csv(file_path))
-
+    loader = UnstructuredFileLoader(file_path)
+    docs = loader.load_and_split(text_splitter=splitter)
+    
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-    vectorstore = FAISS.from_documents(documents, cached_embeddings)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
 
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
-# List of CSV file paths
-csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv','res_info.csv','res_menu.csv','res_service.csv']
+# 파일 경로 지정
+file_path = "Restaurant_Descriptions.txt"
 
-# Process CSV files and create embeddings
-retriever = embed_files(csv_files)
+# 파일 임베딩 처리
+retriever = embed_file(file_path)
 
 #memory = ConversationBufferMemory()
 memory= ConversationBufferWindowMemory(k=5) 
