@@ -13,6 +13,7 @@ from .views import (
     save_restaurant, 
     unsave_restaurant,
     get_restaurant_coordinates,
+    chat_history
 )
 
 from rest_framework_simplejwt.views import (
@@ -38,6 +39,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('get-restaurant-coordinates/', get_restaurant_coordinates, name='get_restaurant_coordinates'),
+    path('chat_history/', chat_history, name='chat_history'),
 ]
     #path('api-auth/', include('rest_framework.urls')),  # DRF 기본 인증 URL 포함
 

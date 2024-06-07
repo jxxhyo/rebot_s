@@ -143,7 +143,7 @@ Answer: 'The recommended menu at XX restaurant includes A, B, and C.'
 电话号码 - 餐厅电话
 营业时间 – 餐厅营业时间
 ’ 这种格式，你随机选择3家符合查询的餐厅，每家餐厅单独列出一段。
-
+s
 问题：‘告诉我有停车位的餐厅’，‘告诉我适合带孩子的餐厅’，等与餐厅提供的服务相关的问题
 回答：'有停车位的餐厅是‘餐厅名称’，‘餐厅名称’等，随机列出3家餐厅。
 
@@ -310,6 +310,24 @@ def chatbot(request):
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+def chat_history(request):
+    try:
+        username = request.GET.get('username')
+
+        if not username:
+            return JsonResponse({'error': 'Username is required'}, status=400)
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+
+        chats = Chat.objects.filter(user=user).order_by('created_at')
+        chat_history = [{'message': chat.message, 'response': chat.response, 'timestamp': chat.created_at} for chat in chats]
+
+        return JsonResponse({'chat_history': chat_history})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 #@login_required
 def get_user_info(request, username):
