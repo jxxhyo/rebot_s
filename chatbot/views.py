@@ -466,3 +466,15 @@ def get_restaurant_coordinates(request):
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    
+import logging
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def keep_alive(request):
+    if request.method == 'POST':
+        # 로그에 기록
+        logger.info('Keep-alive request received')
+        return JsonResponse({'status': 'alive'})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
