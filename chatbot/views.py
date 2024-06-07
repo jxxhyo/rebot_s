@@ -8,26 +8,47 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 from django.contrib.auth import login, logout
 from django.conf import settings
+import pandas as pd
 from langchain.docstore.document import Document
 
+
 # Import necessary modules for your custom chatbot
-from langchain_openai import ChatOpenAI
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain_community.document_loaders import CSVLoader
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-import pandas as pd
+from langchain.prompts import ChatPromptTemplate
+from langchain.document_loaders import UnstructuredFileLoader
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores.faiss import FAISS
+from langchain.chat_models import ChatOpenAI
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
+from langchain.storage import LocalFileStore
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory
+
 # Initialize your custom chatbot model components
-#openai_api_key='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'
 openai_api_key = settings.OPENAI_API_KEY
 
-# List of CSV file paths
-csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv','res_info.csv','res_menu.csv','res_service.csv']
+class ChatCallbackHandler(BaseCallbackHandler):
+    def __init__(self):
+        self.message = ""
 
-# Function to load and split CSV data into documents
+    def on_llm_start(self, *args, **kwargs):
+        self.message = ""
+        print("AI is typing...", end='\r')
+
+    def on_llm_end(self, *args, **kwargs):
+        print(f"\nAI: {self.message}")
+
+    def on_llm_new_token(self, token, *args, **kwargs):
+        self.message += token
+
+llm = ChatOpenAI(
+    temperature=0.7,
+    streaming=True,
+    callbacks=[ChatCallbackHandler()],
+    openai_api_key=openai_api_key,
+    max_tokens=2048,
+)
+
 def load_and_split_csv(file_path):
     dataframe = pd.read_csv(file_path)
     documents = []
@@ -40,32 +61,41 @@ def load_and_split_csv(file_path):
         documents.append(document)
     return documents
 
-# Load documents from all CSV files
-documents = []
-for file_path in csv_files:
-    documents.extend(load_and_split_csv(file_path))
+def embed_files(file_paths):
+    cache_dir = LocalFileStore(f"./.cache/embeddings/")
+    splitter = CharacterTextSplitter.from_tiktoken_encoder(separator="\n", chunk_size=600, chunk_overlap=100)
+    documents = []
 
-# Initialize embeddings
-model_name = "jhgan/ko-sroberta-multitask"
-model_kwargs = {'device': 'cpu'}
-encode_kwargs = {'normalize_embeddings': False}
-hf_embeddings = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
-)
+    for file_path in file_paths:
+        documents.extend(load_and_split_csv(file_path))
 
-# Initialize vector store with all documents
-vectorstore = Chroma.from_documents(documents=documents, embedding=hf_embeddings)
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(documents, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
 
-# Initialize memory
-memory = ConversationBufferMemory(
-    memory_key="chat_history", return_messages=True
-)
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
 
-system_template = """
-- 한국어로 물어볼 때
+# List of CSV file paths
+csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv','res_info.csv','res_menu.csv','res_service.csv']
+
+# Process CSV files and create embeddings
+retriever = embed_files(csv_files)
+
+#memory = ConversationBufferMemory()
+memory= ConversationBufferWindowMemory(k=5) 
+
+prompt_template = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+            사용자가 질문을 주면 그 질문의 언어로 대답해
+            - 한국어로 물어볼 때
 너의 이름은 ‘REBOT’이야. 역할은 서울에 위치한 성수동 식당의 정보를 알려주고 추천해주는 챗봇이야.
+아래는 질문에 대한 답변의 예시로 다음과 같은 형태로 대답을 해주면 돼
 
 질문 : ’안녕?’, ‘안녕하세요’, ‘반가워’
 답변 : ‘안녕하세요 저는 REBOT이에요. 성수동 식당에 대해서 무엇이든 물어보세요.’
@@ -75,7 +105,7 @@ system_template = """
 ‘1. 식당이름 (식당의 식당종류) \n
  주소 -  식당 도로명 주소(위치)\n
  전화번호 - 식당 전화번호\n
- 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 5개 식당 골라서 식당마다 문단을나눠서 보여주면서 추천해줘
+ 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 3개 식당 골라서 문단을나눠서 보여주면서 추천해줘
 
 질문 : ‘한식당 식당을 추천해줘’, ‘파스타집 추천해줄래?’ 등 특정 식당 종류 추천 질문
 답변 :
@@ -90,121 +120,144 @@ system_template = """
 질문 : 'XX식당 추천메뉴 알려줘' 'XX식당 추천메뉴?' 등 베스트메뉴나 추천메뉴를 물어보는 질문
 답변 : 'XX식당의 추천메뉴는 A,B,C 입니다.'라는 형식으로 답변해.
 
-- 영어로 물어볼 때
+질문 : ‘식당을 하나만 추천해줘’, ‘식당을 하나만 추천해줄래?’
+답변 :
+‘1. 식당이름 (식당의 식당종류) \n
+ 주소 -  식당 도로명 주소(위치)\n
+ 전화번호 - 식당 전화번호\n
+ 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 1개 식당 골라서 식당마다 문단을나눠서 보여주면서 추천해줘
+ 
+-english
 
-Your name is 'REBOT'. Your role is to provide information and recommend restaurants located in Seongsu-dong, Seoul. When asked a question, respond as follows.
-If you don't know the answer, say 'I don't know about that.' Answer in the language the question is asked: in English if asked in English, in Chinese if asked in Chinese, in Korean if asked in Korean, and in Japanese if asked in Japanese.
+Your name is ‘REBOT’. Your role is to provide information and recommend restaurants located in Seongsu-dong, Seoul.
+Here are examples of how you should respond to questions:
 
-Questions: 'Hi?', 'Hello', 'Nice to meet you'
+Question: 'Hi?', 'Hello', 'Nice to meet you'
 Answer: 'Hello, I am REBOT. Ask me anything about restaurants in Seongsu-dong.'
 
-Questions: 'Recommend a restaurant', 'Can you recommend a restaurant?'
+Question: 'Recommend a restaurant', 'Can you recommend a restaurant?'
 Answer:
-‘1. Restaurant Name (Restaurant Type)
-Address - Restaurant street address (location)
-Phone Number - Restaurant phone number
-Business Hours – Restaurant business hours
-’ in a format where you randomly select 5 restaurants, listing them in separate paragraphs.
+‘1. 식당이름 (Restaurant Type) \n
+ Address - 식당 도로명 주소(위치)\n
+ Phone Number - 식당 전화번호\n
+ Business Hours – 식당 영업시간\n’ format, randomly select 3 restaurants and display them in separate paragraphs.
 
-Questions: 'Recommend a Korean restaurant', 'Can you recommend a pasta place?' etc., specific restaurant type recommendations
+Question: 'Recommend a Korean restaurant', 'Can you recommend a pasta place?' etc., specific restaurant type recommendations
 Answer:
-‘1. Restaurant Name (Restaurant Type)
-Address - Restaurant street address (location)
-Phone Number - Restaurant phone number
-Business Hours – Restaurant business hours
-’ in a format where you randomly select 3 restaurants that match the query, listing them in separate paragraphs.
+‘1. 식당이름 (Restaurant Type) \n
+ Address - 식당 도로명 주소(위치) \n
+ Phone Number - 식당 전화번호\n
+ Business Hours – 식당 영업시간\n’ format, randomly select 3 restaurants that match the query and display them in separate paragraphs.
 
-Questions: 'Tell me about restaurants with parking', 'Tell me about child-friendly restaurants', etc., related to services provided by the restaurant
-Answer: 'Restaurants with parking are 'Restaurant Name', 'Restaurant Name', etc.', listing 3 restaurants randomly.
+Question: 'Tell me about restaurants with parking', 'Tell me about child-friendly restaurants' etc., related to services provided by the restaurant
+Answer: 'Restaurants with parking are '식당이름', '식당이름', etc.', randomly list about 3 restaurants.
 
-Questions: 'Tell me the recommended menu of XX restaurant', 'Recommended menu at XX restaurant?'
+Question: 'Tell me the recommended menu of XX restaurant', 'Recommended menu at XX restaurant?'
 Answer: 'The recommended menu at XX restaurant includes A, B, and C.'
 
-- 중국어로 물어볼 때
+Question: 'Recommend just one restaurant', 'Can you recommend just one restaurant?'
+Answer:
+‘1. 식당이름 (Restaurant Type) \n
+ Address - 식당 도로명 주소(위치)\n
+ Phone Number - 식당 전화번호\n
+ Business Hours – 식당 영업시간\n’ format, randomly select 1 restaurant and display it in a separate paragraph.
 
-你的名字是‘REBOT’。你的角色是提供位于首尔圣水洞的餐厅信息并推荐餐厅。当被问到问题时，按照以下方式回答。
-如果你不知道答案，请说“我不知道关于那个问题”。用提问者提问的语言回答：用英语，如果用英语提问；用中文，如果用中文提问；用韩语，如果用韩语提问；用日语，如果用日语提问。
+-Chinese
+你的名字是‘REBOT’。你的角色是提供位于首尔圣水洞的餐厅信息并推荐餐厅。
+以下是回答问题的示例，按以下形式回答：
 
 问题：‘你好？’，‘您好’，‘很高兴见到你’
 回答：‘你好，我是REBOT。请随时问我关于圣水洞餐厅的任何问题。’
 
 问题：‘推荐一家餐厅’，‘能推荐一家餐厅吗？’
 回答：
-‘1. 餐厅名称（餐厅类型）
-地址 - 餐厅的街道地址（位置）
-电话号码 - 餐厅电话
-营业时间 – 餐厅营业时间
-’ 这种格式，你随机选择5家餐厅，每家餐厅单独列出一段。
+‘1. 식당이름（餐厅类型）\n
+ 地址 - 식당 도로명 주소(位置)\n
+ 电话号码 - 식당 전화번호\n
+ 营业时间 – 식당 영업시간\n’ 的格式，随机选择3家餐厅，每家餐厅分段显示。
 
-问题：‘推荐一家韩国餐厅’，‘能推荐一家意大利面馆吗？’等特定餐厅类型的推荐
+问题：‘推荐一家韩国餐厅’，‘能推荐一家意大利面馆吗？’ 等特定餐厅类型推荐问题
 回答：
-‘1. 餐厅名称（餐厅类型）
-地址 - 餐厅的街道地址（位置）
-电话号码 - 餐厅电话
-营业时间 – 餐厅营业时间
-’ 这种格式，你随机选择3家符合查询的餐厅，每家餐厅单独列出一段。
-s
+‘1. 식당이름（餐厅类型）\n
+ 地址 - 식당 도로명 주소(位置) \n
+ 电话号码 - 식당 전화번호\n
+ 营业时间 – 식당 영업시간\n’ 的格式，随机选择3家符合查询的餐厅，每家餐厅分段显示。
+
 问题：‘告诉我有停车位的餐厅’，‘告诉我适合带孩子的餐厅’，等与餐厅提供的服务相关的问题
-回答：'有停车位的餐厅是‘餐厅名称’，‘餐厅名称’等，随机列出3家餐厅。
+回答：'有停车位的餐厅是‘식당이름’，‘식당이름’等，随机列出3家餐厅。
 
 问题：‘告诉我XX餐厅的推荐菜单’，‘XX餐厅的推荐菜单是什么？’
 回答：‘XX餐厅的推荐菜单包括A，B，C。’
 
-- 일본어로 물어볼 때
+问题：‘只推荐一家餐厅’，‘能只推荐一家餐厅吗？’
+回答：
+‘1. 식당이름（餐厅类型）\n
+ 地址 - 식당 도로명 주소(位置)\n
+ 电话号码 - 식당 전화번호\n
+ 营业时间 – 식당 영업시간\n’ 的格式，随机选择1家餐厅，并分段显示。
 
-あなたの名前は「REBOT」です。あなたの役割は、ソウルの聖水洞にあるレストランの情報を提供し、おすすめすることです。質問されたときは、次のように答えます。
-答えがわからない場合は、「その内容についてはよくわかりません。」と答えます。質問された言語で答えます：英語で質問された場合は英語で、中国語で質問された場合は中国語で、韓国語で質問された場合は韓国語で、日本語で質問された場合は日本語で答えます。
+-Japanese
+あなたの名前は「REBOT」です。あなたの役割は、ソウルの聖水洞にあるレストランの情報を提供し、おすすめすることです。
+質問に対する回答の例は次のとおりです：
 
 質問：「こんにちは？」「こんにちは」「はじめまして」
 回答：「こんにちは、私はREBOTです。聖水洞のレストランについて何でも聞いてください。」
 
 質問：「レストランをおすすめして」「レストランをおすすめしてくれる？」
 回答：
-‘1. レストラン名（レストランの種類）
-住所 - レストランの住所（場所）
-電話番号 - レストランの電話番号
-営業時間 – レストランの営業時間
-’ この形式で、ランダムに5軒のレストランを選び、それぞれを別々の段落で表示します。
+‘1. 식당이름（レストランの種類）\n
+ 住所 - 식당 도로명 주소（場所）\n
+ 電話番号 - 식당 전화번호\n
+ 営業時間 – 식당 영업시간\n’ 形式で、ランダムに3軒のレストランを選び、それぞれを別々の段落で表示します。
 
-質問：「韓国料理のレストランをおすすめして」「パスタのお店をおすすめしてくれる？」など、特定のレストランの種類のおすすめを尋ねる場合
+質問：「韓国料理のレストランをおすすめして」「パスタのお店をおすすめしてくれる？」など、特定のレストランの種類のおすすめ質問
 回答：
-‘1. レストラン名（レストランの種類）
-住所 - レストランの住所（場所）
-電話番号 - レストランの電話番号
-営業時間 – レストランの営業時間
-’ この形式で、質問に該当する3軒のレストランをランダムに選び、それぞれを別々の段落で表示します。
+‘1. 식당이름（レストランの種類）\n
+ 住所 - 식당 도로명 주소（場所）\n
+ 電話番号 - 식당 전화번호\n
+ 営業時間 – 식당 영업시간\n’ 形式で、質問に該当する3軒のレストランをランダムに選び、それぞれを別々の段落で表示します。
 
-質問：「駐車場があるレストランを教えて」「子連れに優しいレストランを教えて」など、レストランが提供するサービスに関する質問が入った場合
-回答：「駐車場があるレストランは「レストラン名」、「レストラン名」などです。」とランダムに3軒のレストランを教えます。
+質問：「駐車場があるレストランを教えて」「子連れに優しいレストランを教えて」など、レストランが提供するサービスに関する質問
+回答：「駐車場があるレストランは「식당이름」、「식당이름」などです。」とランダムに3軒のレストランを教えます。
 
 質問：「XXレストランのおすすめメニューを教えて」「XXレストランのおすすめメニューは？」など、ベストメニューやおすすめメニューを尋ねる質問
 回答：「XXレストランのおすすめメニューはA、B、Cです。」
 
-식당알려줄때 한번만 알려줘 2번씩 알려주지말고
-주소랑 식당이름을 알려줄 때, 무조건 해당 언어로 번역해서 알려줘
-提供地址和餐厅名称时，请务必将其翻译成适当的语言。
-住所とレストランの名前を教えてくれるとき、無条件にその言語に翻訳して教えてください
+質問：「レストランを1軒だけおすすめして」「1軒だけおすすめしてくれる？」
+回答：
+‘1. 식당이름（レストランの種類）\n
+ 住所 - 식당 도로명 주소（場所）\n
+ 電話番号 - 식당 전화번호\n
+ 営業時間 – 식당 영업시간\n’ 形式で、ランダムに1軒のレストランを選び、それぞれを別々の段落で表示します。
 
- ---------------- {context}"""
+            Context: {context}
 
-messages = [
-    SystemMessagePromptTemplate.from_template(system_template),
-    HumanMessagePromptTemplate.from_template("{question}")
-]
-qa_prompt = ChatPromptTemplate.from_messages(messages)
+            Conversation history:
+            {history}
 
-# Initialize LLM and retriever
-llm = ChatOpenAI(openai_api_key=openai_api_key, temperature=0.7, max_tokens=2048, model_name='gpt-4o', streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
-retriever = vectorstore.as_retriever()
+            """,
+        ),
+        ("human", "{question}"),
+    ]
+)
 
-# Initialize the conversational retrieval chain
-qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, combine_docs_chain_kwargs={"prompt": qa_prompt}, memory=memory, output_key='answer')
 
-def ask_openai(message, language):
-    response = qa({"question": message})
-    answer = response['answer']
-    
-    return answer
+# 사용자 입력 받기 및 답변 생성
+def ask_question(question):
+    memory.chat_memory.add_user_message(question)
+    memory_variables = memory.load_memory_variables({})
+    history = memory_variables["history"]
+
+    context_docs = retriever.get_relevant_documents(question)
+    context = format_docs(context_docs)
+    chain_input = {
+        "context": context,
+        "history": history,
+        "question": question,
+    }
+    response = (prompt_template | llm).invoke(chain_input)
+    memory.chat_memory.add_ai_message(response.content)
+    return response.content
 
 @csrf_exempt
 def register(request):
@@ -298,7 +351,7 @@ def chatbot(request):
             except User.DoesNotExist:
                 return JsonResponse({'error': 'User not found'}, status=404)
 
-            response = ask_openai(message, language)
+            response = ask_question(message)
 
             # Chat 모델을 사용하여 메시지와 응답을 저장합니다.
             Chat.objects.create(user=user, message=message, response=response)
@@ -308,7 +361,6 @@ def chatbot(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 def chat_history(request):
     try:
@@ -328,6 +380,14 @@ def chat_history(request):
         return JsonResponse({'chat_history': chat_history})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt    
+def delete_all_chats(request):
+    if request.method == 'POST':
+        Chat.objects.all().delete()
+        return JsonResponse({'message': 'All chat history deleted successfully!'}, status=200)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 #@login_required
 def get_user_info(request, username):
