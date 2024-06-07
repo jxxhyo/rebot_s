@@ -25,7 +25,7 @@ import pandas as pd
 openai_api_key = settings.OPENAI_API_KEY
 
 # List of CSV file paths
-csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv']
+csv_files = ['restaurant_info1.csv', 'all_res_info_df.csv','res_info.csv','res_menu.csv']
 
 # Function to load and split CSV data into documents
 def load_and_split_csv(file_path):
