@@ -524,3 +524,20 @@ def keep_alive(request):
         logger.info('Keep-alive request received')
         return JsonResponse({'status': 'alive'})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+from .models import ResImage
+from .serializers import ResImageSerializer
+
+@csrf_exempt
+@api_view(['POST'])
+def get_restaurant_images(request):
+    restaurant_name = request.data.get('restaurant')
+    if restaurant_name:
+        images = ResImage.objects.filter(restaurant__name=restaurant_name)
+        if images.exists():
+            serializer = ResImageSerializer(images, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "No images found for the given restaurant"}, status=404)
+    return Response({"error": "Restaurant name not provided"}, status=400)

@@ -15,7 +15,8 @@ from .views import (
     get_restaurant_coordinates,
     chat_history,
     keep_alive,
-    delete_all_chats
+    delete_all_chats,
+    get_restaurant_images
 )
 
 from rest_framework_simplejwt.views import (
@@ -44,6 +45,7 @@ urlpatterns = [
     path('chat_history/', chat_history, name='chat_history'),
     path('keep-alive/', keep_alive, name='keep_alive'),
     path('delete_all_chats/', delete_all_chats, name='delete_all_chats'),
+    path('api/restaurant-images/', get_restaurant_images, name='restaurant-images'),
 ]
     #path('api-auth/', include('rest_framework.urls')),  # DRF 기본 인증 URL 포함
 
