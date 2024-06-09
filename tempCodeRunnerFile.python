@@ -1,12 +1,13 @@
-import pandas as pd
+import os
+import django
 
-# Load the new CSV file to inspect its structure
-file_path = '//Users/jaehyo/Documents/projects/chatbot/django_chatbot/res_name_lan.csv'
+# Django 프로젝트 설정 파일 경로
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_chatbot.settings')  # 'my_django_project'를 실제 프로젝트 이름으로 변경
+django.setup()
 
-# Attempt to read the file with different encodings
+from chatbot.models import Restaurant, SavedRestaurant, ResImage, BookmarkRestaurantInfo  # 'my_app'을 실제 앱 이름으로 변경
 
-df_res_name_lan = pd.read_csv(file_path, encoding='utf-8')
+# 모든 Restaurant 관련 데이터 삭제
+Restaurant.objects.all().delete()
 
-
-# Display the dataframe to understand its structure
-print(df_res_name_lan.head())
+print("All restaurant-related data has been deleted.")
