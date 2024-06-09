@@ -45,6 +45,7 @@ class Restaurant(models.Model):
     service = models.CharField(max_length=255, blank=True, null=True)
     menu1 = models.CharField(max_length=255, blank=True, null=True)
     menu2 = models.CharField(max_length=255, blank=True, null=True)
+    mood = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name

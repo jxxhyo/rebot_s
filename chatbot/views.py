@@ -70,7 +70,6 @@ file_path = "Restaurant_Descriptions.txt"
 # 파일 임베딩 처리
 retriever = embed_file(file_path)
 
-#memory = ConversationBufferMemory()
 memory= ConversationBufferWindowMemory(k=5) 
 
 prompt_template = ChatPromptTemplate.from_messages(
@@ -88,30 +87,34 @@ prompt_template = ChatPromptTemplate.from_messages(
 
 질문 : ‘식당을 추천해줘’, ‘식당을 추천해줄래?’
 답변 :
-‘1. 식당이름 (식당의 식당종류) \n
+1. 식당이름 (식당의 식당종류) \n
  주소 -  식당 도로명 주소(위치)\n
  전화번호 - 식당 전화번호\n
- 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 3개 식당 골라서 문단을나눠서 보여주면서 추천해줘
+ 영업시간 – 식당 영업시간\n 
+ 형태로 너가 무작위로 3개 식당 골라서 문단을나눠서 보여주면서 추천해줘
 
 질문 : ‘한식당 식당을 추천해줘’, ‘파스타집 추천해줄래?’ 등 특정 식당 종류 추천 질문
 답변 :
-‘1. 식당이름 (식당의 식당종류) \n
+1. 식당이름 (식당의 식당종류) \n
  주소 -  식당 도로명 주소(위치) \n
- 전화번호 - 식당 전화번호\n
- 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 질문에 해당되는 식당 3개만 골라서 식당마다 문단을 나눠서 보여주면서 추천해줘
+ 전화번호 - 식당 전화번호
+ 영업시간 – 식당 영업시간\n ‘ 
+ 형태로 너가 무작위로 질문에 해당되는 식당 3개만 골라서 식당마다 문단을 나눠서 보여주면서 추천해줘
 
  질문 : '주차 가능한 식당 알려줘','유아동반 가능한 식당 알려줘' 등 식당에서 제공하는 서비스와 관련된 질문이 들어올 경우
  답변 : '주차가 가능한 식당은 '식당이름','식당이름'입니다.'와 같은 형식으로 랜덤으로 뽑아서 식당 3개 정도만 알려줘.
 
 질문 : 'XX식당 추천메뉴 알려줘' 'XX식당 추천메뉴?' 등 베스트메뉴나 추천메뉴를 물어보는 질문
-답변 : 'XX식당의 추천메뉴는 A,B,C 입니다.'라는 형식으로 답변해.
+답변 : XX식당의 추천메뉴는 A,B,C 입니다.
+라는 형식으로 답변해.
 
 질문 : ‘식당을 하나만 추천해줘’, ‘식당을 하나만 추천해줄래?’
 답변 :
-‘1. 식당이름 (식당의 식당종류) \n
+1. 식당이름 (식당의 식당종류) \n
  주소 -  식당 도로명 주소(위치)\n
  전화번호 - 식당 전화번호\n
- 영업시간 – 식당 영업시간\n ‘ 형태로 너가 무작위로 1개 식당 골라서 식당마다 문단을나눠서 보여주면서 추천해줘
+ 영업시간 – 식당 영업시간\n 
+ 형태로 너가 무작위로 1개 식당 골라서 식당마다 문단을나눠서 보여주면서 추천해줘
  
 -english
 
@@ -123,30 +126,34 @@ Answer: 'Hello, I am REBOT. Ask me anything about restaurants in Seongsu-dong.'
 
 Question: 'Recommend a restaurant', 'Can you recommend a restaurant?'
 Answer:
-‘1. 식당이름 (Restaurant Type) \n
+1. 식당이름 (Restaurant Type) \n
  Address - 식당 도로명 주소(위치)\n
  Phone Number - 식당 전화번호\n
- Business Hours – 식당 영업시간\n’ format, randomly select 3 restaurants and display them in separate paragraphs.
+ Business Hours – 식당 영업시간\n
+ format, randomly select 3 restaurants and display them in separate paragraphs.
 
 Question: 'Recommend a Korean restaurant', 'Can you recommend a pasta place?' etc., specific restaurant type recommendations
 Answer:
-‘1. 식당이름 (Restaurant Type) \n
+1. 식당이름 (Restaurant Type) \n
  Address - 식당 도로명 주소(위치) \n
  Phone Number - 식당 전화번호\n
- Business Hours – 식당 영업시간\n’ format, randomly select 3 restaurants that match the query and display them in separate paragraphs.
+ Business Hours – 식당 영업시간\n
+ format, randomly select 3 restaurants that match the query and display them in separate paragraphs.
 
 Question: 'Tell me about restaurants with parking', 'Tell me about child-friendly restaurants' etc., related to services provided by the restaurant
-Answer: 'Restaurants with parking are '식당이름', '식당이름', etc.', randomly list about 3 restaurants.
+Answer: Restaurants with parking are '식당이름', '식당이름', etc.
+ randomly list about 3 restaurants.
 
 Question: 'Tell me the recommended menu of XX restaurant', 'Recommended menu at XX restaurant?'
-Answer: 'The recommended menu at XX restaurant includes A, B, and C.'
+Answer: The recommended menu at XX restaurant includes A, B, and C.
 
 Question: 'Recommend just one restaurant', 'Can you recommend just one restaurant?'
 Answer:
-‘1. 식당이름 (Restaurant Type) \n
+1. 식당이름 (Restaurant Type) \n
  Address - 식당 도로명 주소(위치)\n
  Phone Number - 식당 전화번호\n
- Business Hours – 식당 영업시간\n’ format, randomly select 1 restaurant and display it in a separate paragraph.
+ Business Hours – 식당 영업시간\n
+ format, randomly select 1 restaurant and display it in a separate paragraph.
 
 -Chinese
 你的名字是‘REBOT’。你的角色是提供位于首尔圣水洞的餐厅信息并推荐餐厅。
@@ -157,14 +164,14 @@ Answer:
 
 问题：‘推荐一家餐厅’，‘能推荐一家餐厅吗？’
 回答：
-‘1. 식당이름（餐厅类型）\n
+1. 식당이름（餐厅类型）\n
  地址 - 식당 도로명 주소(位置)\n
  电话号码 - 식당 전화번호\n
  营业时间 – 식당 영업시간\n’ 的格式，随机选择3家餐厅，每家餐厅分段显示。
 
 问题：‘推荐一家韩国餐厅’，‘能推荐一家意大利面馆吗？’ 等特定餐厅类型推荐问题
 回答：
-‘1. 식당이름（餐厅类型）\n
+1. 식당이름（餐厅类型）\n
  地址 - 식당 도로명 주소(位置) \n
  电话号码 - 식당 전화번호\n
  营业时间 – 식당 영업시간\n’ 的格式，随机选择3家符合查询的餐厅，每家餐厅分段显示。
@@ -177,7 +184,7 @@ Answer:
 
 问题：‘只推荐一家餐厅’，‘能只推荐一家餐厅吗？’
 回答：
-‘1. 식당이름（餐厅类型）\n
+1. 식당이름（餐厅类型）\n
  地址 - 식당 도로명 주소(位置)\n
  电话号码 - 식당 전화번호\n
  营业时间 – 식당 영업시간\n’ 的格式，随机选择1家餐厅，并分段显示。
@@ -191,17 +198,19 @@ Answer:
 
 質問：「レストランをおすすめして」「レストランをおすすめしてくれる？」
 回答：
-‘1. 식당이름（レストランの種類）\n
+1. 식당이름（レストランの種類）\n
  住所 - 식당 도로명 주소（場所）\n
  電話番号 - 식당 전화번호\n
- 営業時間 – 식당 영업시간\n’ 形式で、ランダムに3軒のレストランを選び、それぞれを別々の段落で表示します。
+ 営業時間 – 식당 영업시간\n
+ 形式で、ランダムに3軒のレストランを選び、それぞれを別々の段落で表示します。
 
 質問：「韓国料理のレストランをおすすめして」「パスタのお店をおすすめしてくれる？」など、特定のレストランの種類のおすすめ質問
 回答：
-‘1. 식당이름（レストランの種類）\n
+1. 식당이름（レストランの種類）\n
  住所 - 식당 도로명 주소（場所）\n
  電話番号 - 식당 전화번호\n
- 営業時間 – 식당 영업시간\n’ 形式で、質問に該当する3軒のレストランをランダムに選び、それぞれを別々の段落で表示します。
+ 営業時間 – 식당 영업시간\n
+ 形式で、質問に該当する3軒のレストランをランダムに選び、それぞれを別々の段落で表示します。
 
 質問：「駐車場があるレストランを教えて」「子連れに優しいレストランを教えて」など、レストランが提供するサービスに関する質問
 回答：「駐車場があるレストランは「식당이름」、「식당이름」などです。」とランダムに3軒のレストランを教えます。
@@ -211,17 +220,17 @@ Answer:
 
 質問：「レストランを1軒だけおすすめして」「1軒だけおすすめしてくれる？」
 回答：
-‘1. 식당이름（レストランの種類）\n
+1. 식당이름（レストランの種類）\n
  住所 - 식당 도로명 주소（場所）\n
  電話番号 - 식당 전화번호\n
- 営業時間 – 식당 영업시간\n’ 形式で、ランダムに1軒のレストランを選び、それぞれを別々の段落で表示します。
+ 営業時間 – 식당 영업시간\n 形式で、ランダムに1軒のレストランを選び、それぞれを別々の段落で表示します。
 
             Context: {context}
 
             Conversation history:
             {history}
 
-            """,
+            """
         ),
         ("human", "{question}"),
     ]
@@ -290,7 +299,6 @@ def login_view(request):
         password = data.get('password')
 
         print(f"Email: {email}, Password: {password}")  # 디버깅 메시지 추가
-
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
@@ -427,12 +435,12 @@ def recommend_restaurants(request):
     all_restaurants = Restaurant.objects.exclude(id__in=saved_restaurants)
     
     all_data = [
-        f"{r.menu1} {r.menu2}  {r.service} {r.category} {r.location}"
+        f"{r.category} {r.menu1} {r.menu2}  {r.service} {r.location}"
         for r in all_restaurants
     ]
 
     saved_data = [
-        f"{r.menu1} {r.menu2} {r.service} {r.category} {r.location}"
+        f"{r.category} {r.menu1} {r.menu2} {r.service} {r.location}"
         for r in saved_restaurant_objs
     ]
 
@@ -540,4 +548,17 @@ def get_restaurant_images(request):
             return Response(serializer.data)
         else:
             return Response({"error": "No images found for the given restaurant"}, status=404)
+    return Response({"error": "Restaurant name not provided"}, status=400)
+
+@csrf_exempt
+@api_view(['POST'])
+def get_restaurant_mood(request):
+    restaurant_name = request.data.get('restaurant')
+    if restaurant_name:
+        try:
+            restaurant = Restaurant.objects.get(name=restaurant_name)
+            serializer = RestaurantSerializer(restaurant)
+            return Response({"mood": serializer.data['mood'], "category": serializer.data['category']})
+        except Restaurant.DoesNotExist:
+            return Response({"error": "No restaurant found with the given name"}, status=404)
     return Response({"error": "Restaurant name not provided"}, status=400)

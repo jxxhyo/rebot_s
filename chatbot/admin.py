@@ -7,7 +7,7 @@ admin.site.register(Profile)
 
 @admin.register(Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'location', 'service', 'menu1', 'menu2')
+    list_display = ('name', 'category', 'location', 'service', 'menu1', 'menu2','mood')
 
 @admin.register(SavedRestaurant)
 class SavedRestaurantAdmin(admin.ModelAdmin):

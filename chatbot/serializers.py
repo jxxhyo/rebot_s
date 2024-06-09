@@ -46,3 +46,4 @@ class SavedRestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedRestaurant
         fields = ['id', 'user', 'restaurant', 'restaurant_name', 'restaurant_category', 'restaurant_location', 'restaurant_images']
+
