@@ -10,7 +10,7 @@ from chatbot.models import ResImage, Restaurant  # 'my_app'을 실제 앱 이름
 ResImage.objects.all().delete()
 
 # 파일들이 저장된 루트 디렉토리 설정
-root_dir = 'dalle-image'
+root_dir = 'dall-e'
 
 # 디렉토리 트리 순회
 for restaurant_name in os.listdir(root_dir):
