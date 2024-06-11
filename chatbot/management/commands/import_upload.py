@@ -11,6 +11,11 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         csv_file = kwargs['csv_file']
 
+        # 기존 데이터 삭제
+        BookmarkRestaurantInfo.objects.all().delete()
+        self.stdout.write(self.style.SUCCESS('Successfully deleted all existing data'))
+
+        # 새로운 데이터 추가
         with open(csv_file, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
